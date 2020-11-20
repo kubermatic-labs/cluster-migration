@@ -1,0 +1,16 @@
+metadata:
+  annotations:
+    kubermatic.io/aws-region: ${AWS_REGION}
+  managedFields:
+  finalizers:
+#    - kubermatic.io/delete-nodes
+spec:
+  cloud:
+    aws:
+      credentialsReference:
+        name: credential-aws-${CLUSTER_ID}
+        namespace: kubermatic
+#      accessKeyId: ${AWS_ACCESS_KEY_ID}
+#      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+    dc: ${K8C_DATACENTER_NAME}
+    vsphere:

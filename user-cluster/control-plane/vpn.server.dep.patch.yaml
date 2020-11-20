@@ -1,0 +1,66 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: openvpn-server
+          args:
+            - --proto
+            - tcp
+            - --dev
+            - tun
+            - --mode
+            - server
+            - --lport
+            - "1194"
+            - --server
+            - 10.20.0.0
+            - 255.255.255.0
+            - --ca
+            - /etc/kubernetes/pki/ca/ca.crt
+            - --cert
+            - /etc/openvpn/pki/server/server.crt
+            - --key
+            - /etc/openvpn/pki/server/server.key
+            - --dh
+            - none
+            - --duplicate-cn
+            - --client-config-dir
+            - /etc/openvpn/clients
+            - --status
+            - /run/openvpn/openvpn-status
+            - --status-version
+            - "3"
+            - --cipher
+            - AES-256-GCM
+            - --auth
+            - SHA1
+            - --keysize
+            - "256"
+            - --script-security
+            - "2"
+            - --ping
+            - "5"
+            - --verb
+            - "3"
+            - --log
+            - /dev/stdout
+            - --push
+            - route 172.25.0.0 255.255.0.0
+            - --route
+            - 172.25.0.0
+            - 255.255.0.0
+            - --push
+            - route 10.240.16.0 255.255.240.0
+            - --route
+            - 10.240.16.0
+            - 255.255.240.0
+            - --push
+            - route 10.254.0.0 255.255.0.0
+            - --route
+            - 10.254.0.0
+            - 255.255.0.0
+            - --client-to-client
+          resources:
+            limits:
+              cpu: 250m
+              memory: 300Mi
