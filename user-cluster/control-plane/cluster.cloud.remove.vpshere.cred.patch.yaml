@@ -1,6 +1,0 @@
-spec:
-  cloud:
-    vsphere:
-      credentialsReference:
-
-### TODO check if full purge `vsphere:` is more predictable

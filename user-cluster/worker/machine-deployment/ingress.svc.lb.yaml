@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### NOT NEEDED normally, just as backup
 apiVersion: v1
 kind: Service
 metadata:
@@ -26,7 +27,7 @@ metadata:
     app.kubernetes.io/version: 0.31.1
     helm.sh/chart: ingress-nginx-2.0.1
     kubermatic-addon: ingress-nginx
-  name: ingress-nginx-controller-aws
+  name: 2nd-ingress-nginx-controller
   namespace: ingress-nginx
 spec:
   ports:

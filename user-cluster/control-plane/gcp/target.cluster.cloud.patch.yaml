@@ -1,0 +1,13 @@
+metadata:
+  annotations:
+  managedFields:
+  finalizers:
+#    - kubermatic.io/delete-nodes
+spec:
+  cloud:
+    gcp:
+      credentialsReference:
+        name: credential-gcp-${CLUSTER_ID}
+        namespace: kubermatic
+    dc: ${K8C_DATACENTER_NAME}
+    vsphere:

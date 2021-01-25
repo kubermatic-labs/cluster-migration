@@ -127,24 +127,32 @@ default via 10.2.0.1 dev ens192 proto dhcp src 10.2.9.219 metric 100
 ### Update Cluster Spec & Cloud Credentials: [`control-plane/10_update_target_cloud.sh`](control-plane/10_update_target_cloud.sh)
 Script will automate the following steps:
 - Identify cluster and pause cluster [`control-plane/cluster.pause.true.patch.yaml`](control-plane/cluster.pause.true.patch.yaml)
-- Remove current cloud provider credentials [`cluster.cloud.remove.vpshere.cred.patch.yaml`](control-plane/cluster.cloud.remove.vpshere.cred.patch.yaml)
+- Remove current cloud provider credentials (vsphere ony right now) [`control-plane/vsphere/cluster.cloud.remove.cred.patch.yaml`](control-plane/vsphere/cluster.cloud.remove.cred.patch.yaml)
 - Unpause cluster to process changes [`control-plane/cluster.pause.false.patch.yaml`](control-plane/cluster.pause.false.patch.yaml)
-- Render and create new cloud provider secrets [`control-plane/target.aws.secret.template.yaml`](control-plane/target.aws.secret.template.yaml)
-- Patch new cloud provider credentials ref and settings [`control-plane/target.cluster.aws.cloud.patch.yaml`](control-plane/target.cluster.aws.cloud.patch.yaml)
+- Render and create new cloud provider secrets:
+  - `aws`: [`control-plane/aws/target.secret.template.yaml`](control-plane/aws/target.secret.template.yaml)
+  - `gcp`: [`control-plane/gcp/target.secret.template.yaml`](control-plane/gcp/target.secret.template.yaml)
+- Patch new cloud provider credentials ref and settings:
+  - `aws`: [`control-plane/aws/target.cluster.cloud.patch.yaml`](control-plane/aws/target.cluster.cloud.patch.yaml)
+  - `gcp`: [`control-plane/gcp/target.cluster.cloud.patch.yaml`](control-plane/gcp/target.cluster.cloud.patch.yaml)
 - Unpause Cluster with new Cloud Provider to start reconciling
 - Collect meta data for machine deployment
 
-### Apply new Machine Deployment [`worker/aws-workers/10_deploy.sh`](worker/aws-workers/10_deploy.sh)
-- Fill metadata input fill [`worker/aws-workers/00_input.sh`](worker/aws-workers/00_input.sh)
-- Create AWS machine deployment [`worker/aws-workers/md.aws.target.template.yaml`](worker/aws-workers/md.aws.target.template.yaml)
-- Watch the reconciling and creation of machines at AWS
+### Apply new Machine Deployment [`worker/machine-deployment/10_deploy.sh`](worker/machine-deployment/10_deploy.sh)
+- Create new machine deployment:
+  - `aws` [`worker/machine-deployment/aws/md.target.template.yaml`](worker/machine-deployment/aws/md.target.template.yaml)
+  - `gcp` [`worker/machine-deployment/gcp/md.target.template.yaml`](worker/machine-deployment/gcp/md.target.template.yaml)
+- Watch the reconciling and creation of machines at the target cloud
 
 ### Test new cluster ingress entrypoint
-By default the updated cloud controller manager (CCM) should reconcile and create a new load balancer by default at AWS. In may some cases the existing service blocks it. In such cases you could deploy a second service e.g. like [`worker/aws-workers/aws.ingress.svc.lb.yaml`](worker/aws-workers/aws.ingress.svc.lb.yaml).
+By default the updated cloud controller manager (CCM) should reconcile and create a new load balancer by default at AWS. In may some cases the existing service blocks it. In such cases you could deploy a second service e.g. like [`worker/machine-deployment/ingress.svc.lb.yaml`](worker/machine-deployment/ingress.svc.lb.yaml).
 
-To see if the cluster have successfully created a new cloud load balancer, go to the [AWS Console > EC2 > Load Balancer](https://eu-central-1.console.aws.amazon.com/ec2/v2/home?region=eu-central-1#LoadBalancers:sort=loadBalancerName) and check:
+To see if the cluster have successfully created a new cloud load balancer, go to:
+- Cloud LB
+  - `aws` [AWS Console > EC2 > Load Balancer](https://eu-central-1.console.aws.amazon.com/ec2/v2/home?region=eu-central-1#LoadBalancers:sort=loadBalancerName) and check:
+  - `gcp` [GCP Console > Network services > Load balancing](https://console.cloud.google.com/net-services/loadbalancing/loadBalancers/list)
 - LB exists with matching kubernetes tag
-- new AWS Nodes are registered and healthy
+- new cloud Nodes are registered and healthy
 
 Ensure Cluster Workload is accessible:
 - Ensure VPN servers is patched [`control-plane/00_vpn_deploy.sh`](control-plane/00_vpn_deploy.sh)
@@ -153,7 +161,9 @@ Ensure Cluster Workload is accessible:
 
 ### Migrate Workload and update DNS
 
-- Start to drain the old nodes, one-by-one with: `kubectl drain --ignore-daemonsets --delete-local-data to-migrate-vsphere-node-xxxx`
+- Start to remove the wokroload of the old nodes
+  a) drain, one-by-one with: `kubectl drain --ignore-daemonsets --delete-local-data to-migrate-vsphere-node-xxxx`
+  b) mark current nodes as not schedule: `kubectl cordon node` + reschedule workload e.g. `kubectl rollout restart deployment xxx`
 - Test after first node drain if workload is still reachable and continue
 - Change DNS configuration from the old endpoint to new external name or IP of AWS load balancer
 

@@ -37,13 +37,7 @@ function kexp(){
     echo "kexp has no piped input!"
     echo "usage: COMMAND | kexp"
   else
-    yq d - 'metadata.resourceVersion' |
-    yq d - 'metadata.uid' |
-    yq d - 'metadata.creationTimestamp' |
-    yq d - 'metadata.selfLink' |
-    yq d - 'metadata.managedFields' |
-    yq d - 'metadata.annotations.kubectl*' |
-    yq d - 'spec.template.spec.providerSpec.value.overwriteCloudConfig' |
-    yq d - 'status'
+    # remove not neat fields by kubectl krew plugin
+    kubectl neat
   fi
 }

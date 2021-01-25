@@ -1,0 +1,71 @@
+# Copyright 2020 The Kubermatic Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#### TODO replace hard corded VPC / subnet
+apiVersion: cluster.k8s.io/v1alpha1
+kind: MachineDeployment
+metadata:
+  name: ubuntu-aws-target
+  namespace: kube-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      machine: md-aws-target
+  strategy:
+    rollingUpdate:
+      maxSurge: 3
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        machine: md-aws-target
+    spec:
+      metadata:
+        labels:
+          machine: md-aws-target
+          system/cluster: ${CLUSTER_ID}
+          system/project: ${PROJECT_ID}
+      providerSpec:
+        value:
+          cloudProvider: aws
+          cloudProviderSpec:
+            assignPublicIP: true
+            availabilityZone: eu-west-1c
+            diskSize: 25
+            diskType: standard
+            ebsVolumeEncrypted: false
+            instanceProfile: ${AWS_INSTANCE_PROFILE}
+            instanceType: t3.medium
+            region: eu-west-1
+            securityGroupIDs:
+              - ${AWS_SECURITY_GROUP}
+            subnetId: subnet-2fcf9549
+            tags:
+              kubernetes.io/cluster/${CLUSTER_ID}: ""
+              system/cluster: ${CLUSTER_ID}
+              system/project: ${PROJECT_ID}
+            vpcId: vpc-68b05811
+          operatingSystem: ubuntu
+          operatingSystemSpec:
+            distUpgradeOnBoot: false
+          sshPublicKeys:
+            - |
+              ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCloj8OvReuuOXtECaMo1iZD8q8newJ9hWZSxIiwOG2406uOueYOxBleb85Jl231YWWjocj6fqExvZBzsQQlrad4fy6oDL5sKZyngtkCZnWcq1DsWn8Sgas9lw2+KS67EXO/P5SHhJSOrqyU6ciktX0WViPvVqb6DnK3RepFh6Xnyl0Q/0RnpSCTomyKK2PfNsv8e80AnfxA1CtnRfeexgwiKtQUPzkEdCG1ABcdZZru3m0y7y1qR0MdYYZIK+bycacngvJCJyp8gnIXHU8dDZanHL2WGOcCpd/gjwM6iryr6IhlCZXw++PRGK1aErtvKDH7oaAMLW8qFK4+bpMdeytd4Viw/g3SH3Q7ows2xl6NTaU2F0PTXD+qAY2xna1eemet1txl1oP6KQJ2Rqc5rNU3/auhdK4PaU22D8Z2XF7gOrsoQB7dqW0BBDHg/ftVNb9BgOHGkYvxSsCavcqX3joUyFjHzhv+sD1WiOPvfRqV4fQ8h47ERvD3QXuBn+5YKeKp/0sjSCypIdK02FAFa2NxN2tEoh7wdCBX9enFU3UT7jfeW5Pf98Z6ao9hiAF80J5FIM21sMG3E3dAMb2tr8Gc8jM5QdWO4rJkG9j5v2d1umLkSxm7pN4Mxw/AE02jYNEblm9i/Pbzg8wqa9gw2gubO7A8qoKVtA1xlOnDVB+0Q== tobi@loodse.com
+          taint:
+            - effect: NoSchedule
+              key: node.kubernetes.io/unschedulable
+      versions:
+        kubelet: 1.18.10

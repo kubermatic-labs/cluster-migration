@@ -20,6 +20,7 @@ set -euf -o pipefail
 
 if check_continue "add VPN node network DaemonSet"; then
   kubectl -n kube-system apply -f vpn.client.ds.yaml
+  kubectl -n kube-system rollout restart daemonset openvpn-client
   watch kubectl -n kube-system get pod -l role=openvpn-client -o wide
 fi
 
