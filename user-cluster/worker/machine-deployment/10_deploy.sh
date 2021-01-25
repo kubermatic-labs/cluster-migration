@@ -53,6 +53,6 @@ fi
 if check_continue "watch MachineDeployment creation"; then
   watch kubectl -n kube-system get md,ma,node
 fi
-if check_continue "Apply second Ingress LB"; then
-  kubectl apply -f ingress.svc.lb.yaml
-fi
+#if check_continue "Apply second Ingress LB"; then
+#  kubectl apply -f ingress.svc.lb.yaml
+#fi

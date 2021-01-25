@@ -142,6 +142,7 @@ fi
 pause_script " ===> Deploy new MachineDeployment!"
 pause_script " ===> Deploy now VPN overlay to nodes!"
 pause_script " ===> Check VPN by ssh and IPs"
+pause_script " ===> Start Migration of Workload :-)"
 #
 #if check_continue "remove vsphere spec -  cluster ${CLUSTER_ID}"; then
 #  kubectl ${DRY_RUN} patch cluster ${CLUSTER_ID} \

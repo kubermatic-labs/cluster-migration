@@ -51,14 +51,17 @@ fi
 if [[ "$SOURCE_CLOUD" == "vsphere" ]] ; then
   if check_continue "Remove on-prem MetalLB"; then
     kubectl delete ns metallb-system
-    pause_script " ===> unpause cluster at seed or restart cloud controller manager"
     pause_script " ===> Please to remove the addon from KKP as well"
+    kubectl delete -n ingress-nginx svc ingress-nginx-controller
+    pause_script " ===> unpause cluster at seed or restart cloud controller manager"
   fi
   if check_continue "Remove VPN and revert Canal config"; then
     ../vpn-overlay/99_revert.sh
   fi
-  if check_continue "Drain and remove nodes"; then
+  if check_continue "Drain nodes"; then
     kubectl get nodes --no-headers | grep -i vsphere | awk '{print $1}' | xargs kubectl drain --ignore-daemonsets --delete-emptydir-data
-    kubectl get nodes --no-headers | grep -i vsphere | awk '{print $1}' | xargs kubectl node
+  fi
+  if check_continue "Remove nodes"; then
+    kubectl get nodes --no-headers | grep -i vsphere | awk '{print $1}' | xargs kubectl delete node
   fi
 fi

@@ -32,4 +32,6 @@ if check_continue "unpause cluster ${CLUSTER_ID}"; then
     --patch "$(cat cluster.pause.false.patch.yaml)" --type merge
   echo "..."
   echo "VPN Server will reconcile by kubermatic cluster controller"
+  sleep 2
+  watch kubectl -n "cluster-${CLUSTER_ID}" get pod
 fi
