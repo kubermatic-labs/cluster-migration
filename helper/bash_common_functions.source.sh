@@ -24,6 +24,11 @@ function check_continue() {
         *)     echo "no" && return 1;;
     esac
 }
+function pause_script() {
+    echo ""
+    read -p "$1"
+    echo ".... continue"
+}
 
 function render_yaml() {
   eval "cat <<EOF

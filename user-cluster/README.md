@@ -17,11 +17,25 @@ Ensure reachability
 
 ## Workflow
 
-### Prepare Environment
-  * Ensure ssh-key is deployed on nodes
-  * Machine Deployment `spec.paused: true`: [`worker/machine-deployment/00_pause.sh`](worker/machine-deployment/00_pause.sh)
+### Prepare Environment for Cloud Migration
+* Ensure ssh-key is deployed on nodes
+* Machine Deployment `spec.paused: true`: [`worker/machine-deployment/00_pause.sh`](worker/machine-deployment/00_pause.sh)
 
-### Deploy open-vpn-server on seed cluster: [`control-plane/00_vpn_deploy.sh`](./control-plane/00_vpn_deploy.sh)
+### Update Cluster Spec & Cloud Credentials: [`control-plane/10_update_target_cloud.sh`](control-plane/10_update_target_cloud.sh)
+Script will automate the following steps:
+- Identify cluster and pause cluster [`control-plane/cluster.pause.true.patch.yaml`](control-plane/cluster.pause.true.patch.yaml)
+- Remove current cloud provider credentials (vsphere ony right now) [`control-plane/vsphere/cluster.cloud.remove.cred.patch.yaml`](control-plane/vsphere/cluster.cloud.remove.cred.patch.yaml)
+- Unpause cluster to process changes [`control-plane/cluster.pause.false.patch.yaml`](control-plane/cluster.pause.false.patch.yaml)
+- Render and create new cloud provider secrets:
+  - `aws`: [`control-plane/aws/target.secret.template.yaml`](control-plane/aws/target.secret.template.yaml)
+  - `gcp`: [`control-plane/gcp/target.secret.template.yaml`](control-plane/gcp/target.secret.template.yaml)
+- Patch new cloud provider credentials ref and settings:
+  - `aws`: [`control-plane/aws/target.cluster.cloud.patch.yaml`](control-plane/aws/target.cluster.cloud.patch.yaml)
+  - `gcp`: [`control-plane/gcp/target.cluster.cloud.patch.yaml`](control-plane/gcp/target.cluster.cloud.patch.yaml)
+- Unpause Cluster with new Cloud Provider to start reconciling
+- Collect meta data for machine deployment
+
+### Deploy open-vpn-server on seed cluster: [`control-plane/20_vpn_deploy.sh`](control-plane/20_vpn_deploy.sh)
 Script will automate the following steps:
 * Pause cluster `spec.paused: true`: [`control-plane/cluster.pause.true.patch.yaml`](./control-plane/cluster.pause.true.patch.yaml)
 * Patch VPN Server [`control-plane/vpn.server.dep.patch.yaml`](control-plane/vpn.server.dep.patch.yaml)
@@ -92,7 +106,7 @@ default via 10.2.0.1 dev ens192 proto dhcp src 10.2.9.219 metric 100
 ```  
 #### Applied changes
 * Created VPN interface, see [`worker/vpn-overlay/vpn.client.ds.yaml`](worker/vpn-overlay/vpn.client.ds.yaml)
-* Applied canal change of interface to `kube`, see [`(worker/vpn-overlay/canal.conf.cm.patch.yaml`](worker/vpn-overlay/canal.conf.cm.patch.yaml) 
+* Applied canal change of interface to `kube`, see [`(worker/vpn-overlay/canal.conf.cm.patch.yaml`](worker/vpn-overlay/canal.conf.cm.patch.yaml)
 ```
 default via 10.2.0.1 dev ens192 proto dhcp src 10.2.9.219 metric 100 
 10.2.0.0/17 dev ens192 proto kernel scope link src 10.2.9.219 
@@ -124,20 +138,6 @@ default via 10.2.0.1 dev ens192 proto dhcp src 10.2.9.219 metric 100
        valid_lft forever preferred_lft forever
 ```
 
-### Update Cluster Spec & Cloud Credentials: [`control-plane/10_update_target_cloud.sh`](control-plane/10_update_target_cloud.sh)
-Script will automate the following steps:
-- Identify cluster and pause cluster [`control-plane/cluster.pause.true.patch.yaml`](control-plane/cluster.pause.true.patch.yaml)
-- Remove current cloud provider credentials (vsphere ony right now) [`control-plane/vsphere/cluster.cloud.remove.cred.patch.yaml`](control-plane/vsphere/cluster.cloud.remove.cred.patch.yaml)
-- Unpause cluster to process changes [`control-plane/cluster.pause.false.patch.yaml`](control-plane/cluster.pause.false.patch.yaml)
-- Render and create new cloud provider secrets:
-  - `aws`: [`control-plane/aws/target.secret.template.yaml`](control-plane/aws/target.secret.template.yaml)
-  - `gcp`: [`control-plane/gcp/target.secret.template.yaml`](control-plane/gcp/target.secret.template.yaml)
-- Patch new cloud provider credentials ref and settings:
-  - `aws`: [`control-plane/aws/target.cluster.cloud.patch.yaml`](control-plane/aws/target.cluster.cloud.patch.yaml)
-  - `gcp`: [`control-plane/gcp/target.cluster.cloud.patch.yaml`](control-plane/gcp/target.cluster.cloud.patch.yaml)
-- Unpause Cluster with new Cloud Provider to start reconciling
-- Collect meta data for machine deployment
-
 ### Apply new Machine Deployment [`worker/machine-deployment/10_deploy.sh`](worker/machine-deployment/10_deploy.sh)
 - Create new machine deployment:
   - `aws` [`worker/machine-deployment/aws/md.target.template.yaml`](worker/machine-deployment/aws/md.target.template.yaml)
@@ -145,7 +145,7 @@ Script will automate the following steps:
 - Watch the reconciling and creation of machines at the target cloud
 
 ### Test new cluster ingress entrypoint
-By default the updated cloud controller manager (CCM) should reconcile and create a new load balancer by default at AWS. In may some cases the existing service blocks it. In such cases you could deploy a second service e.g. like [`worker/machine-deployment/ingress.svc.lb.yaml`](worker/machine-deployment/ingress.svc.lb.yaml).
+By default the updated cloud controller manager (CCM) should reconcile and create a new load balancer by default at AWS. In may some cases the existing service blocks it. In such cases you could deploy a second service e.g. like [`worker/machine-deployment/ingress.svc.lb.yaml`](worker/workload-demo/ingress.svc.lb.yaml).
 
 To see if the cluster have successfully created a new cloud load balancer, go to:
 - Cloud LB
@@ -155,17 +155,17 @@ To see if the cluster have successfully created a new cloud load balancer, go to
 - new cloud Nodes are registered and healthy
 
 Ensure Cluster Workload is accessible:
-- Ensure VPN servers is patched [`control-plane/00_vpn_deploy.sh`](control-plane/00_vpn_deploy.sh)
+- Ensure VPN servers is patched [`control-plane/00_vpn_deploy.sh`](control-plane/20_vpn_deploy.sh)
 - Ensure VPN is still deployed [`worker/vpn-overlay/00_deploy.sh`](worker/vpn-overlay/00_deploy.sh)
 - LoadBalancer external IP is serving the ingress content
 
 ### Migrate Workload and update DNS
 
-- Start to remove the wokroload of the old nodes
+- Start to remove the wokroload of the old nodes, see [`./worker/workload-demo/10_deploy.sh`](./worker/workload-demo/10_deploy.sh)
   a) drain, one-by-one with: `kubectl drain --ignore-daemonsets --delete-local-data to-migrate-vsphere-node-xxxx`
   b) mark current nodes as not schedule: `kubectl cordon node` + reschedule workload e.g. `kubectl rollout restart deployment xxx`
 - Test after first node drain if workload is still reachable and continue
-- Change DNS configuration from the old endpoint to new external name or IP of AWS load balancer
+- Change DNS configuration from the old endpoint to new external name or IP of the target load balancer
 
 ### Cleanup old cloud resources
 - Delete `node` objects in cluster: `kubectl delete node to-migrate-vsphere-node-xxxx`

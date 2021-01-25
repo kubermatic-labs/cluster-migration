@@ -125,7 +125,7 @@ if check_continue "[step 2] unpause cluster ${CLUSTER_ID} to start reconciling";
   fi
 fi
 
-if check_continue "metadata for md of cluster ${CLUSTER_ID}"; then
+if check_continue "[step 2] metadata for md of cluster ${CLUSTER_ID}"; then
   echo "####### DATA for machine deployment"
   echo "#cluster id"
   kubectl get cluster -o yaml ${CLUSTER_ID} | yq e '.metadata.name' -
@@ -135,6 +135,13 @@ if check_continue "metadata for md of cluster ${CLUSTER_ID}"; then
   kubectl get cluster -o yaml ${CLUSTER_ID} | yq e '.spec.cloud.'"${TARGET_CLOUD}" -
 fi
 
+if check_continue "[step 3] rollout VPN overlay ${CLUSTER_ID}"; then
+  ./20_vpn_deploy.sh ${CLUSTER_ID}
+fi
+
+pause_script " ===> Deploy new MachineDeployment!"
+pause_script " ===> Deploy now VPN overlay to nodes!"
+pause_script " ===> Check VPN by ssh and IPs"
 #
 #if check_continue "remove vsphere spec -  cluster ${CLUSTER_ID}"; then
 #  kubectl ${DRY_RUN} patch cluster ${CLUSTER_ID} \

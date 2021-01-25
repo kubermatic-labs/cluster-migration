@@ -27,7 +27,7 @@ metadata:
     app.kubernetes.io/version: 0.31.1
     helm.sh/chart: ingress-nginx-2.0.1
     kubermatic-addon: ingress-nginx
-  name: 2nd-ingress-nginx-controller
+  name: second-ingress-svc
   namespace: ingress-nginx
 spec:
   ports:

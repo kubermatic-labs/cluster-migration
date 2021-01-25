@@ -43,7 +43,7 @@ mkdir -p ${TMP_FOLDER}
 tmpfile=${TMP_FOLDER}/md.cluster.${CLUSTER_ID}.yaml
 
 if check_continue "create ${TARGET_CLOUD} MachineDeployment -  cluster ${CLUSTER_ID}"; then
-  pwd
+  pause_script "===> check if source MachineDeployment is paused!"
   render_yaml ${TARGET_CLOUD}/md.target.template.yaml > $tmpfile
   cat $tmpfile
 fi

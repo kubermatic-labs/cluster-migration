@@ -14,22 +14,18 @@
 # limitations under the License.
 
 cd $(dirname $(realpath $0))
-function check_continue() {
-    echo ""
-    read -p "$1 ([y]es or [N]o): "
-    case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
-        y|yes) echo "yes" && return 0;;
-        *)     echo "no" && return 1;;
-    esac
-}
+COMMON_FUNCTIONS='../../../helper/bash_common_functions.source.sh'
+source ${COMMON_FUNCTIONS}
 set -euf -o pipefail
 
 if check_continue "update canal overlay to use default interface"; then
   kubectl -n kube-system patch cm canal-config --patch "$(cat canal.conf.cm.patch.revert.yaml)" --type strategic
   # restart to load changed config
   kubectl -n kube-system rollout restart daemonset canal
+  watch kubectl -n kube-system get pod -l k8s-app=canal -o wide
 fi
 
 if check_continue "remove VPN node network DaemonSet"; then
   kubectl -n kube-system delete -f vpn.client.ds.yaml
+  watch kubectl -n kube-system get pod -l role=openvpn-client -o wide
 fi
