@@ -33,5 +33,8 @@ if check_continue "unpause cluster ${CLUSTER_ID}"; then
   echo "..."
   echo "VPN Server will reconcile by kubermatic cluster controller"
   sleep 2
-  watch kubectl -n "cluster-${CLUSTER_ID}" get pod
+  if check_continue "restart cloud controller manager ${CLUSTER_ID}"; then
+    kubectl rollout restart deployment controller-manager -n cluster-${CLUSTER_ID}
+    watch kubectl -n "cluster-${CLUSTER_ID}" get pod
+  fi
 fi
